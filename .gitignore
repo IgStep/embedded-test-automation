@@ -1,0 +1,10 @@
+build-fw/
+tests/unit/build/
+sil-results/
+**/report-*.xml
+__pycache__/
+.pytest_cache/
+nucleo_led/Debug/
+nucleo_led/Release/
+*.gcda
+*.gcno
