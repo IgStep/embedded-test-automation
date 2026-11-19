@@ -1,5 +1,6 @@
 # Unit tests: build and run them on the PC.
 #   make            build + run all tests
+#   make coverage   also make a coverage report (lesson 6)
 #   make clean      delete the build folder
 #
 # Reading a rule:
@@ -30,7 +31,15 @@ build/test_app: test_app.c fake_board.c fake_board.h $(APP)/*.c $(APP)/*.h $(UNI
 	mkdir -p build
 	$(CC) $(CFLAGS) test_app.c fake_board.c $(APP)/app.c $(APP)/led_seq.c $(APP)/button.c $(UNITY) -o build/test_app
 
-clean:
-	rm -rf build
+# Rebuild everything with --coverage, run the tests, then make the report.
+coverage: clean
+	$(MAKE) test EXTRA=--coverage
+	mkdir -p build/coverage
+	gcovr --root ../.. --filter '.*/App/' --exclude '.*board_stm32.c' \
+	      --txt --html-details build/coverage/index.html \
+	      --fail-under-line 100 . ../..
 
-.PHONY: test clean
+clean:
+	rm -rf build *.gcda *.gcno
+
+.PHONY: test coverage clean
