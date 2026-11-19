@@ -7,6 +7,11 @@
  */
 #include "main.h"      /* HAL + the pin settings CubeMX generated */
 #include "board.h"
+#include <string.h>  /* strlen */
+
+/* CubeMX creates huart2 in main.c. "extern" says: it exists in another
+   file, the linker will find it. */
+extern UART_HandleTypeDef huart2;
 
 /* The 7 LED pins of port C, bit i of the mask -> led_pin[i]. */
 static const uint16_t led_pin[7] = {
@@ -48,4 +53,21 @@ bool board_button_raw(void)
 {
     /* B1 has a pull-up on the board: released = 1, pressed = 0. */
     return HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13) == GPIO_PIN_RESET;
+}
+
+int board_uart_getc(void)
+{
+    uint8_t c;
+    /* Timeout 0 = don't wait: take a char if one has arrived, else go on.
+       The main loop must not block, or the LED timing would stall. */
+    if (HAL_UART_Receive(&huart2, &c, 1, 0) == HAL_OK) {
+        return c;
+    }
+    return -1;
+}
+
+void board_uart_puts(const char *s)
+{
+    /* Blocking send. ~30 chars at 115200 baud take about 2.6 ms. */
+    HAL_UART_Transmit(&huart2, (const uint8_t *)s, (uint16_t)strlen(s), 100);
 }
