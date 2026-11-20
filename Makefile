@@ -10,4 +10,7 @@ unit:
 coverage:
 	$(MAKE) -C tests/unit coverage
 
+host:
+	cd tests/system && python3 -m pytest --target host --junitxml=report-host.xml
+
 .PHONY: fw unit coverage
