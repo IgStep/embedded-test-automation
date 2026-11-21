@@ -1,0 +1,39 @@
+// Renode platform for our NUCLEO-F446RE setup.
+// Renode has no ready-made F446 board, but the generic STM32F4 model has
+// the same RCC, GPIO and USART2 registers at the same addresses, which is
+// all our firmware uses.
+using "platforms/cpus/stm32f4.repl"
+
+// The generic model assumes a 72 MHz SysTick. Our firmware runs on the
+// 16 MHz HSI clock, so without this HAL_GetTick() would run 4.5x too fast.
+nvic:
+    systickFrequency: 16000000
+
+// 7 virtual LEDs on PC0..PC6 (named led0..led6)
+led0: Miscellaneous.LED @ gpioPortC 0
+led1: Miscellaneous.LED @ gpioPortC 1
+led2: Miscellaneous.LED @ gpioPortC 2
+led3: Miscellaneous.LED @ gpioPortC 3
+led4: Miscellaneous.LED @ gpioPortC 4
+led5: Miscellaneous.LED @ gpioPortC 5
+led6: Miscellaneous.LED @ gpioPortC 6
+
+// Onboard green LED LD2 on PA5
+LD2: Miscellaneous.LED @ gpioPortA 5
+
+gpioPortC:
+    0 -> led0@0
+    1 -> led1@0
+    2 -> led2@0
+    3 -> led3@0
+    4 -> led4@0
+    5 -> led5@0
+    6 -> led6@0
+
+gpioPortA:
+    5 -> LD2@0
+
+// Blue button B1 on PC13. invert: true = reads 0 when pressed, like the real one.
+UserButton: Miscellaneous.Button @ gpioPortC 13
+    invert: true
+    -> gpioPortC@13

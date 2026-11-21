@@ -13,4 +13,9 @@ coverage:
 host:
 	cd tests/system && python3 -m pytest --target host --junitxml=report-host.xml
 
+RENODE_TEST ?= renode-test
+
+sil: fw
+	$(RENODE_TEST) tests/sil/led_seq.robot --variable ELF:$(CURDIR)/$(FW_BUILD)/led_seq.elf --results-dir sil-results
+
 .PHONY: fw unit coverage
