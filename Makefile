@@ -18,4 +18,7 @@ RENODE_TEST ?= renode-test
 sil: fw
 	$(RENODE_TEST) tests/sil/led_seq.robot --variable ELF:$(CURDIR)/$(FW_BUILD)/led_seq.elf --results-dir sil-results
 
+hil:
+	cd tests/system && python3 -m pytest --target pi --fw ../../$(FW_BUILD)/led_seq.bin --junitxml=report-hil.xml
+
 .PHONY: fw unit coverage
