@@ -1,0 +1,14 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit:
+    name: Unit tests (host, Unity)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4          # get the repo onto the runner
+      - run: pip install gcovr
+      - run: make -C tests/unit coverage
