@@ -1,0 +1,38 @@
+# HIL pipeline: flashes and tests the real NUCLEO-F446RE through the
+# Raspberry Pi (a self-hosted runner with the label "hil-pi").
+#
+# On demand only.
+
+name: hil
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One board, one test run at a time. A second run waits instead of
+# fighting over the USB port.
+concurrency:
+  group: hil-pi
+  cancel-in-progress: false
+
+jobs:
+  hil:
+    name: HIL (real board via Raspberry Pi)
+    runs-on: [self-hosted, linux, ARM64, hil-pi]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the firmware on the Pi
+        run: make fw
+
+      - name: Flash and test the real board
+        run: make hil
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hil-report
+          path: tests/system/report-hil.xml

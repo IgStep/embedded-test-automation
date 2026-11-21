@@ -1,14 +1,76 @@
+# CI pipeline: every push runs unit tests, the firmware build, the host
+# system tests and SIL on GitHub's servers. HIL is a separate pipeline
+# (hil.yml) that runs on Raspberry Pi on demand after this one passes on main.
 name: ci
 
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   unit:
     name: Unit tests (host, Unity)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4          # get the repo onto the runner
+      - uses: actions/checkout@v4
       - run: pip install gcovr
       - run: make -C tests/unit coverage
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-coverage
+          path: tests/unit/build/coverage/
+
+  build:
+    name: Firmware build (arm-none-eabi-gcc)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi cmake ninja-build
+      - run: cmake -B build-fw -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi.cmake
+      - run: cmake --build build-fw
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: |
+            build-fw/led_seq.elf
+            build-fw/led_seq.bin
+            build-fw/led_seq.map
+
+  host-system:
+    name: System tests on host simulation (pytest)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -r tests/system/requirements.txt
+      - run: cd tests/system && python -m pytest --target host --junitxml=report-host.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: host-system-report
+          path: tests/system/report-host.xml
+
+  sil:
+    name: SIL (real .elf in Renode, Robot Framework)
+    needs: build
+    runs-on: ubuntu-24.04
+    env:
+      RENODE_VERSION: "1.16.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware
+          path: build-fw
+      - name: Install Renode
+        run: |
+          curl -sSfL -o renode.tgz https://github.com/renode/renode/releases/download/v${RENODE_VERSION}/renode-${RENODE_VERSION}.linux-portable-dotnet.tar.gz
+          mkdir renode && tar xzf renode.tgz -C renode --strip-components=1
+          pip install -r renode/tests/requirements.txt
+      - run: renode/renode-test tests/sil/led_seq.robot --variable ELF:${{ github.workspace }}/build-fw/led_seq.elf --results-dir sil-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sil-report
+          path: sil-results/
