@@ -48,8 +48,13 @@ This is why the same logic can run on the board and on a normal PC.
 
 ## CI (GitHub Actions)
 
-- `.github/workflows/ci.yml` runs on every push, on GitHub's servers:
-  unit tests, firmware build, host system tests, SIL.
+- `.github/workflows/ci.yml` runs on GitHub's servers for every pull
+  request to `main`: unit tests, firmware build, host system tests, SIL.
+  The jobs test the PR's merge commit (`main` with the feature branch
+  merged in), so what passes in CI is what lands on `main`. Branch
+  protection on `main` makes these jobs required: a PR can't be merged
+  until they pass. Pushes alone run nothing. You can also start it by hand:
+  **Actions > ci > Run workflow**.
 - `.github/workflows/hil.yml` runs HIL on the Raspberry Pi (a self-hosted
   runner). It runs on demand only: **Actions > hil > Run workflow**.
 
