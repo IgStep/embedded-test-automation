@@ -1,11 +1,17 @@
-# CI pipeline: every push runs unit tests, the firmware build, the host
-# system tests and SIL on GitHub's servers. HIL is a separate pipeline
-# (hil.yml) that runs on Raspberry Pi on demand after this one passes on main.
+# CI pipeline runs on every pull request to main.
+#
+# For a pull_request event, actions/checkout checks out the PR's merge
+# commit (refs/pull/<n>/merge): main with the feature branch merged in.
+# So every job tests the code exactly as it will look on
+# main after the merge. If there some fails, PR won`t be merged.`
+#
+#
+# HIL is a separate pipeline (hil.yml) that runs on Raspberry Pi on demand.
 name: ci
 
 on:
-  push:
   pull_request:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
